@@ -31,7 +31,9 @@ public class Selector : MonoBehaviour
                         var first = element.gameObject.GetComponent<Element>();
                         var second = hitInfo.transform.gameObject.GetComponent<Element>();
 
-                        if (Mathf.Abs(first.X - second.X) < 2 && (Mathf.Abs(first.Y - second.Y) < 2))
+                        int xdiff = Mathf.Abs(first.X - second.X);
+                        int ydiff = Mathf.Abs(first.Y - second.Y);
+                        if (xdiff < 2 && ydiff < 2 && (ydiff+xdiff<2))
                         {
                             Grid.TryChange(first,second);
                         }
