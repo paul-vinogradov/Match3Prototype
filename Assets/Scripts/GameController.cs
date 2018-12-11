@@ -20,27 +20,27 @@ public class GameController : MonoBehaviour
     {
         int x, y;
         if (X.text == "")
-            x = 5;
+            x = 6;
         else
         {
             if (!int.TryParse(X.text, out x))
-                x = 5;
+                x = 6;
             else
             {
-                if (x < 4)
-                    x = 4;
+                if (x < 5)
+                    x = 5;
             }
         }
         if (Y.text == "")
-            y = 5;
+            y = 6;
         else
         {
             if (!int.TryParse(Y.text, out y))
-                y = 5;
+                y = 6;
             else
             {
-                if (y < 4)
-                    y = 4;
+                if (y < 5)
+                    y = 5;
             }
         }
         InputPanel.SetActive(false);

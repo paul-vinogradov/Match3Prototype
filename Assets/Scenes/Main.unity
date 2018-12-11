@@ -255,6 +255,11 @@ Prefab:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 114784024859387550, guid: 6afb6208497bb6d4da8564f3e4ba2e94,
+        type: 2}
+      propertyPath: Materials.Array.size
+      value: 7
+      objectReference: {fileID: 0}
     - target: {fileID: 4239820055221778, guid: 6afb6208497bb6d4da8564f3e4ba2e94, type: 2}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -296,6 +301,16 @@ Prefab:
       propertyPath: ScoreText
       value: 
       objectReference: {fileID: 1413379014}
+    - target: {fileID: 114784024859387550, guid: 6afb6208497bb6d4da8564f3e4ba2e94,
+        type: 2}
+      propertyPath: Materials.Array.data[5]
+      value: 
+      objectReference: {fileID: 2100000, guid: 127a9c6293110aa45bca229386aa8cc2, type: 2}
+    - target: {fileID: 114784024859387550, guid: 6afb6208497bb6d4da8564f3e4ba2e94,
+        type: 2}
+      propertyPath: Materials.Array.data[6]
+      value: 
+      objectReference: {fileID: 2100000, guid: 405861f9fe06c8a4b904b92b2453727b, type: 2}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6afb6208497bb6d4da8564f3e4ba2e94, type: 2}
   m_IsPrefabAsset: 0
