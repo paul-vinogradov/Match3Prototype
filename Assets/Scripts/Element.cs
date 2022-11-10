@@ -2,20 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Element : MonoBehaviour {
-
-    public string color { get; set; }
+public class Element : MonoBehaviour
+{
+    //по факту это просто структура, но так как мне надо было,
+    //чтоб она висела на объекте это класс от монобеха
+    public string Color { get; set; }
     public int X { get; set; }
     public int Y { get; set; }
     public bool Popped { get; set; }
-
-	// Use this for initialization
-	void Start () {
-		
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
 }

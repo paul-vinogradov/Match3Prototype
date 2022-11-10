@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Quit : MonoBehaviour {
 
-	
+	//обычный выхожд, ниче особенного
 	void Update ()
 	{
 		if (Input.GetKey(KeyCode.Escape))

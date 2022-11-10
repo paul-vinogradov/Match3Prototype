@@ -2,35 +2,86 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+//самое сочное, сетка, тут вся логика самой игры
 public class ElementGrid : MonoBehaviour
 {
-    public int YSize = 5;
-    public int XSize = 5;
-    
-    public List<Material> Materials;
+    #region serializes
+    [SerializeField]
+    List<Material> Materials;
+    [SerializeField]
+    Element ElementPrefab;
+    [SerializeField]
+    GameObject BackgroudTile;
+    [SerializeField]
+    GameObject TileHolder;
+    [SerializeField]//вот, видишь, о чем я говорил, когда у тебя тонна сериалайзов
+    GameObject ElementHolder;
+    [SerializeField]//в глазах рябит
+    Text ScoreText;
+    #endregion
 
-    public Element ElementPrefab;
-    public GameObject BackgroudTile;
-    public GameObject TileHolder;
-    public GameObject ElementHolder;
+    #region privateFields
+    //двойной массив, олдскул стайл
+    GameObject[,] _tiles;
+    Element[,] _elements;
+    int _score;
+    int _ySize = 5;
+    int _xSize = 5;
+    #endregion
 
-    GameObject[,] tiles;
-    private Element[,] elements;
-
-    private int Score;
-    public Text ScoreText;
-
-	public void Init(int x, int y)
-	{
-	    XSize = x;
-	    YSize = y;
-        tiles = new GameObject[XSize, YSize];
-        elements = new Element[XSize,YSize];
+    #region gridCreation
+    //инитм сетку, обнуляем счем
+    public void Init(int x, int y)
+    {
+        _xSize = x;
+        _ySize = y;
+        //так давно не видел двойной массив, немного ступор случился
+        _tiles = new GameObject[_xSize, _ySize];
+        _elements = new Element[_xSize, _ySize];
         SpawnGrid();
-	    Score = 0;
-	    ScoreText.text = Score.ToString();
+        _score = 0;
+        ScoreText.text = _score.ToString();
     }
 
+    void SpawnGrid()
+    {
+        for (int i = 0; i < _xSize; i++)
+        {
+            for (int j = 0; j < _ySize; j++)
+            {
+                Vector2 tempPosition = new Vector2(i, j);
+                //делаем префабы для фона. Можно просто сделать большой фон и не заниматься этой фигней
+                var tile = Instantiate(BackgroudTile, tempPosition, Quaternion.identity);
+                tile.transform.parent = TileHolder.transform;
+                _tiles[i, j] = tile;
+
+                //создаем элемент и задаем его индексы
+                var element = CreateElement(tempPosition);
+                element.transform.parent = ElementHolder.transform;
+                _elements[i, j] = element;
+                element.X = i;
+                element.Y = j;
+            }
+        }
+        CheckAllElements();
+        PopLoop();
+    }
+
+    //создаем элемент
+    Element CreateElement(Vector2 position)
+    {
+        var go = Instantiate(ElementPrefab, position, Quaternion.identity);
+        //выбираем ему рандомный цвет
+        var mat = Materials[Random.Range(0, Materials.Count)];
+        go.GetComponent<MeshRenderer>().sharedMaterial = mat;
+        var el = go.GetComponent<Element>();
+        el.Color = mat.name;
+        return el;
+    }
+    #endregion
+
+    #region elementChecking
+    //метод попытки мува из селектора
     public void TryChange(Element one, Element two)
     {
         int oneX = one.X;
@@ -38,8 +89,8 @@ public class ElementGrid : MonoBehaviour
         int twoX = two.X;
         int twoY = two.Y;
 
-        elements[oneX, oneY] = two;
-        elements[twoX, twoY] = one;
+        _elements[oneX, oneY] = two;
+        _elements[twoX, twoY] = one;
 
         if (CheckElement(oneX, oneY) || CheckElement(twoX, twoY))
         {
@@ -48,183 +99,45 @@ public class ElementGrid : MonoBehaviour
             two.X = oneX;
             two.Y = oneY;
 
-            one.gameObject.transform.position=new Vector3(one.X,one.Y);
+            one.gameObject.transform.position = new Vector3(one.X, one.Y);
             two.gameObject.transform.position = new Vector3(two.X, two.Y);
             PopLoop();
         }
         else
         {
-            elements[oneX, oneY] = one;
-            elements[twoX, twoY] = two;
+            _elements[oneX, oneY] = one;
+            _elements[twoX, twoY] = two;
         }
     }
 
-    void SpawnGrid()
+    //проверяем наличие одинаковых элементов во всей сетке
+    void CheckAllElements()
     {
-        for (int i = 0; i < XSize; i++)
+        //это полный треш, но это нам надо в случае, когда мы стартуем игру.
+        //при старте игры у нас не должно быть цепочек в ней, так как это рандом и не хардков
+        //гарантировать мы это не можем, поэтому приходится проверять, но это все равно неоптимально
+        for (int i = 0; i < _xSize; i++)
         {
-            for (int j = 0; j < YSize; j++)
-            {
-                Vector2 temp = new Vector2(i, j);
-                var tile = Instantiate(BackgroudTile, temp, Quaternion.identity);
-                tile.transform.parent = TileHolder.transform;
-                tiles[i, j] = tile;
-                
-                var element = CreateElement(temp);
-                element.transform.parent = ElementHolder.transform;
-                elements[i, j] = element;
-                element.X = i;
-                element.Y = j;
-            }
-        }
-        CheckSame();
-        PopLoop();
-    }
-
-    void PopLoop()
-    {
-        while (Pop())
-        {
-            AddNewElements();
-            CheckSame();
-        }
-    }
-
-    void AddNewElements()
-    {
-        for (int i = 0; i < XSize; i++)
-        {
-            for (int j = 0; j < YSize; j++)
-            {
-                if (elements[i, j] == null)
-                {
-                    var element = CreateElement(new Vector2(i, j));
-                    element.transform.parent = ElementHolder.transform;
-                    elements[i, j] = element;
-                    element.X = i;
-                    element.Y = j;
-                }
-
-            }
-        }
-    }
-    
-    bool Pop()
-    {
-        bool boardChanged = false;
-
-        List<int> rowsToshift=new List<int>();
-        foreach (Element element in elements)
-        {
-            if (element.Popped)
-            {
-                boardChanged = true;
-                //element.gameObject.transform.localScale=new Vector3(0.2f,0.2f,0.2f); //debug view
-                if (!rowsToshift.Contains(element.X))
-                    rowsToshift.Add(element.X);
-                Destroy(element.gameObject);
-                elements[element.X, element.Y] = null;
-                Score += 1;
-                ScoreText.text = Score.ToString();
-            }
-        }
-
-        foreach (int x in rowsToshift)
-        {
-            ShiftRow(x);
-        }
-
-        return boardChanged;
-    }
-
-    void ShiftRow(int x)
-    {
-        int y = 0;
-        while (y<YSize)
-        {
-            if (elements[x, y] == null)
-            {
-                int tempy = y + 1;
-                int yFrom = tempy;
-                Element element=null;
-                while (element==null && tempy<YSize)
-                {
-                    element = elements[x, tempy];
-                    yFrom = tempy;
-                    tempy++;
-                }
-
-                if (element != null)
-                {
-                    elements[x, y] = element;
-                    //print("Shifting element " + element.X +" "+ element.Y+ " to " + x + " " + y);
-                    element.X = x;
-                    element.Y = y;
-                    element.gameObject.transform.position = new Vector3(x,y,0f);
-                    elements[x, yFrom] = null;
-                }
-            }
-            y++;
-        }
-    }
-
-    Element CreateElement(Vector2 position)
-    {
-        var go = Instantiate(ElementPrefab, position, Quaternion.identity);
-        var mat = Materials[Random.Range(0, Materials.Count)];
-        go.GetComponent<MeshRenderer>().sharedMaterial = mat;
-        var el = go.GetComponent<Element>();
-        el.color = mat.name;
-        return el;
-    }
-
-    void CheckSame()
-    {
-        for (int i = 0; i < XSize; i++)
-        {
-            for (int j = 0; j < YSize; j++)
+            for (int j = 0; j < _ySize; j++)
             {
                 CheckElement(i, j);
             }
         }
     }
 
-    void Traverse(int x, int y, string color, List<Element> same)
-    {
-        var element = elements[x, y];
-        if (same.Contains(element))
-            return;
-
-        if (element.color==color)
-            same.Add(element);
-        else
-        {
-            return;
-        }
-
-        if (x - 1 > -1)
-            Traverse(x-1,y,color,same);
-        if (x+1<XSize)
-            Traverse(x+1,y,color,same);
-
-        if (y - 1 > -1)
-            Traverse(x, y-1, color, same);
-        if (y + 1 < YSize)
-            Traverse(x, y+1, color, same);
-    }
-
     bool CheckElement(int x, int y)
     {
-        var element = elements[x, y];
+        var element = _elements[x, y];
 
+        //возвращаем тру если он уже проверен и в очереди на удаление
         if (element.Popped)
             return true;
 
-        string color = element.color;
+        string color = element.Color;
 
         List<Element> same = new List<Element>();
-        
-        Traverse(x,y,color,same);
+
+        Traverse(x, y, color, same);
 
         if (same.Count > 2)
         {
@@ -237,4 +150,157 @@ public class ElementGrid : MonoBehaviour
 
         return false;
     }
+
+    //рекурсивный метод для прохода элементов
+    void Traverse(int x, int y, string color, List<Element> same)
+    {
+        var element = _elements[x, y];
+
+        //проверяем не прошли ли мы его уже
+        if (same.Contains(element) || element.Color != color)
+            return;//видишь как удобно, никаких элсов, никакого лишнего исполнения
+
+        //если цвет такой же - добавляем в массив одинаковых
+        same.Add(element);
+
+        //и идем дальше во все стороны
+        if (x - 1 > -1)
+            Traverse(x - 1, y, color, same);
+        if (x + 1 < _xSize)
+            Traverse(x + 1, y, color, same);
+
+        if (y - 1 > -1)
+            Traverse(x, y - 1, color, same);
+        if (y + 1 < _ySize)
+            Traverse(x, y + 1, color, same);
+
+        //тут, кстати, баг, потому что идти во все стороны надо только с первого элемента проверки
+        //в противном случае у тебя может быть зигзаг из элементов и они все попадут в массив одинаковых
+        //а хотя, кстати, вроде так и должно быть. Но в любом случае 3 в ряд должно быть точно
+        //но тут нет проверки на это и это сработает сразу с зигзагом
+        //менять я это, конечно же, не буду
+    }
+    #endregion
+
+    #region elementDeletion
+    //метод для удаления элементов пока сетка не стабилизируетя
+    void PopLoop()
+    {
+        //пока мы хоть что-то удаляем, чекаем дальше
+        while (Pop())
+        {
+            //добавляем новые элементы сверху
+            AddNewElements();
+            //чекаем все заново
+            CheckAllElements();
+
+            //чекать все заново - максимально неоптимально
+            //это быстро работает, даже на огромных сетках, но все равно
+            //проверять нужно только то, что было изменено, а остальное не трогать
+        }
+    }
+
+    //вхвхв, он добавляет элементы не сверху, а везде, это неправильно
+    //у меня есть метод смещения, он должен чередоваться с добавлением новых элементов
+    void AddNewElements()
+    {
+        for (int i = 0; i < _xSize; i++)
+        {
+            for (int j = 0; j < _ySize; j++)
+            {
+                if (_elements[i, j] == null)
+                {
+                    //собсна везде где пусто - создаем новый блок
+                    var element = CreateElement(new Vector2(i, j));
+                    element.transform.parent = ElementHolder.transform;
+                    _elements[i, j] = element;
+                    element.X = i;
+                    element.Y = j;
+                }
+
+            }
+        }
+    }
+
+    bool Pop()
+    {
+        bool boardChanged = false;
+
+        List<int> rowsToshift = new List<int>();
+
+        //проверяем по каждому, втф, это тоже крайне неоптимально
+        //ну, здесь нужен массив элементов на удаление, когда мы в траверсе их метим
+        //менять я это, конечно же, не буду
+        foreach (Element element in _elements)
+        {
+            if (element.Popped)
+            {
+                //если что-то помечено на удаление - отмечаем, что сетка изменится
+                boardChanged = true;
+
+                //отмечаем, что элементы в ряду нужно будет сместить вниз
+                if (!rowsToshift.Contains(element.X))
+                    rowsToshift.Add(element.X);
+
+                //удаляем, тут должен быть пул, а не удаление
+                Destroy(element.gameObject);
+
+                //помечаем элемент как пустой
+                //использование нула здесь - херня, нам не надо ни удалять ниче, ни создавать
+                //так как элемент это класс, мы можем просто менять его свойства
+                _elements[element.X, element.Y] = null;
+
+                //обновляем счет
+                _score += 1;
+                ScoreText.text = _score.ToString();
+            }
+        }
+
+        //смещаем ряды, в которых чет менялось
+        foreach (int x in rowsToshift)
+        {
+            ShiftRow(x);
+        }
+
+        return boardChanged;
+    }
+
+    void ShiftRow(int x)
+    {
+        int y = 0;
+        while (y < _ySize)
+        {
+            if (_elements[x, y] == null)
+            {
+                int tempY = y + 1;
+                int yFrom = tempY;
+                Element element = null;
+
+                //берем первый элемент выше и смещаем его на этот ряд
+                while (element == null && tempY < _ySize)
+                {
+                    element = _elements[x, tempY];
+                    yFrom = tempY;
+                    tempY++;
+                }
+
+                //если мы его таки нашли, закидываем его на новое место
+                if (element != null)
+                {
+                    _elements[x, y] = element;
+                    element.X = x;
+                    element.Y = y;
+                    element.gameObject.transform.position = new Vector3(x, y, 0f);
+                    _elements[x, yFrom] = null;
+                }
+            }
+            y++; //идем дальше по всему ряду
+
+            //рофл в том, что это неправильно работает, так как во-первых, смещения неотсорированные
+            //а во-вторых создание новых элементов и смещения происходят не одновременно
+            //соответственно у нас может быть такое что мы сместили один ряд, а потом сместили другой над ним
+            //теоретически у нас могут новые элементы создаться в середине сетки
+        }
+    }
+    #endregion
 }

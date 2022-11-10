@@ -1,50 +1,39 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 
-public class GameController : MonoBehaviour
+//отвечает за логику игры в целом, размер сетки, старт, стоп
+class GameController : MonoBehaviour
 {
-    public ElementGrid Grid;
-    public GameObject InputPanel;
-    public GameObject ScorePanel;
-    public Text X;
-    public Text Y;
+    [SerializeField]
+    ElementGrid Grid;
+    [SerializeField]
+    GameObject InputPanel;
+    [SerializeField]
+    GameObject ScorePanel;
+    [SerializeField]
+    Text X;
+    [SerializeField]
+    Text Y;
 
     void Start()
     {
         if (Grid == null)
         {
+            //просто проверка если грид не стоит
             Grid = FindObjectOfType<ElementGrid>();
         }
     }
-    public void Go()
+
+    //метод запуска с кнопки
+    public void StartGame()
     {
-        int x, y;
-        if (X.text == "")
-            x = 6;
-        else
-        {
-            if (!int.TryParse(X.text, out x))
-                x = 6;
-            else
-            {
-                if (x < 5)
-                    x = 5;
-            }
-        }
-        if (Y.text == "")
-            y = 6;
-        else
-        {
-            if (!int.TryParse(Y.text, out y))
-                y = 6;
-            else
-            {
-                if (y < 5)
-                    y = 5;
-            }
-        }
+        int x = 6, y = 6;
+        int.TryParse(X.text, out x);
+        int.TryParse(Y.text, out y);
+
         InputPanel.SetActive(false);
         ScorePanel.SetActive(true);
-        Grid.Init(x,y);
+        //запускаем сетку
+        Grid.Init(Mathf.Max(5, x),Mathf.Max(5, y));
     }
 }
